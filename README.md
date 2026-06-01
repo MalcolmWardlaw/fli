@@ -18,31 +18,39 @@ flights, find the best deals, and filter results with ease.
 ## MCP Server
 
 ```bash
-pipx install flights
-
-# Run the MCP server on STDIO
-fli-mcp
+# Run the MCP server on STDIO (from the project directory)
+uv run fli-mcp
 
 # Run the MCP server over HTTP (streamable)
-fli-mcp-http  # serves at http://127.0.0.1:8000/mcp/
+uv run fli-mcp-http  # serves at http://127.0.0.1:8000/mcp/
 ```
 
 ![MCP Demo](https://raw.githubusercontent.com/punitarani/fli/main/docs/assets/mcp-demo.gif)
 
 ### Connecting to Claude Desktop
 
+Add the following to your `claude_desktop_config.json`:
+
+**Location**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+
 ```json
 {
   "mcpServers": {
     "fli": {
-      "command": "/Users/<user>/.local/bin/fli-mcp"
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/fli",
+        "fli-mcp"
+      ]
     }
   }
 }
 ```
 
-> **Note**: Replace `<user>` with your actual username.
-> You can also find the path to the MCP server by running `which fli-mcp` in your terminal.
+> **Note**: Replace `/path/to/fli` with the absolute path to your cloned `fli` repository.
+> `uv` will automatically manage the virtual environment and dependencies.
 
 ### MCP Tools Available
 
@@ -105,11 +113,6 @@ The MCP server provides two main tools:
 
 ```bash
 pip install flights
-```
-
-```bash
-# Install using pipx (recommended for CLI)
-pipx install flights
 
 # Get started with CLI
 fli --help
@@ -281,36 +284,20 @@ This enables natural language flight search through conversation.
 
 ```bash
 # Run the MCP server on STDIO
-fli-mcp
-
-# Or with uv (for development)
 uv run fli-mcp
 
 # Or with make (for development)
 make mcp
 
 # Run the MCP server over HTTP (streamable)
-fli-mcp-http  # serves at http://127.0.0.1:8000/mcp/
+uv run fli-mcp-http  # serves at http://127.0.0.1:8000/mcp/
 ```
 
 ### Claude Desktop Configuration
 
-To use the flight search capabilities in Claude Desktop, add this configuration to your `claude_desktop_config.json`:
+See [Connecting to Claude Desktop](#connecting-to-claude-desktop) above for setup instructions.
 
-**Location**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-
-```json
-{
-  "mcpServers": {
-    "flight-search": {
-      "command": "fli-mcp",
-      "args": []
-    }
-  }
-}
-```
-
-After adding this configuration:
+After adding the configuration:
 
 1. Restart Claude Desktop
 2. You can now ask Claude to search for flights naturally:

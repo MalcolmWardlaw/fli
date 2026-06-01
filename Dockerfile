@@ -28,8 +28,11 @@ ENV PORT="8000"
 
 EXPOSE 8000
 
-# Run as non-root
-RUN useradd --no-create-home --shell /bin/false appuser
+# Run as non-root, with a home directory. FastMCP's OAuth client storage is
+# written under $HOME, so appuser needs a writable home (mount a volume there
+# to persist registered OAuth clients across container recreations).
+RUN useradd --create-home --shell /bin/false appuser
+ENV HOME="/home/appuser"
 USER appuser
 
 CMD ["fli-mcp-http"]

@@ -81,6 +81,62 @@ CONFIG = FlightSearchConfig()
 CONFIG_SCHEMA = FlightSearchConfig.model_json_schema()
 
 
+def _build_auth():
+    """Build a GitHub OAuth provider restricted to an allowlist of logins.
+
+    Returns ``None`` (no authentication) unless the required environment
+    variables are set, so STDIO transport, local development, and tests are
+    unaffected. Authentication is only intended for the public HTTP server.
+
+    Required environment variables (all under the ``FLI_MCP_`` prefix):
+
+    - ``FLI_MCP_GITHUB_CLIENT_ID`` / ``FLI_MCP_GITHUB_CLIENT_SECRET`` — the
+      credentials of a GitHub OAuth app whose callback URL is
+      ``<FLI_MCP_BASE_URL>/auth/callback``.
+    - ``FLI_MCP_BASE_URL`` — the public URL of this server
+      (e.g. ``https://fli.hillstreet.party``); used to advertise OAuth metadata.
+    - ``FLI_MCP_ALLOWED_GITHUB_LOGINS`` — comma-separated GitHub usernames
+      permitted to access the server. The check fails closed: if this is empty
+      or unset, no one is admitted.
+    """
+    client_id = os.getenv("FLI_MCP_GITHUB_CLIENT_ID")
+    client_secret = os.getenv("FLI_MCP_GITHUB_CLIENT_SECRET")
+    base_url = os.getenv("FLI_MCP_BASE_URL")
+    if not (client_id and client_secret and base_url):
+        return None
+
+    from fastmcp.server.auth.auth import AccessToken
+    from fastmcp.server.auth.providers.github import GitHubProvider
+
+    allowed_logins = {
+        login.strip().lower()
+        for login in os.getenv("FLI_MCP_ALLOWED_GITHUB_LOGINS", "").split(",")
+        if login.strip()
+    }
+
+    class AllowlistGitHubProvider(GitHubProvider):
+        """GitHubProvider that admits only an allowlist of GitHub logins."""
+
+        async def verify_token(self, token: str) -> "AccessToken | None":
+            access = await super().verify_token(token)
+            if access is None:
+                return None
+            login = ((access.claims or {}).get("login") or "").lower()
+            if login not in allowed_logins:
+                return None
+            return access
+
+    # Keep FastMCP's client-consent screen enabled (the default): because this
+    # server is internet-facing and proxies a single upstream GitHub OAuth app,
+    # the consent step guards against confused-deputy attacks. It appears only
+    # once, when a new client (e.g. Claude.ai) first registers.
+    return AllowlistGitHubProvider(
+        client_id=client_id,
+        client_secret=client_secret,
+        base_url=base_url,
+    )
+
+
 mcp = FastMCP(
     "Flight Search MCP Server",
     icons=[
@@ -89,6 +145,7 @@ mcp = FastMCP(
             mimeType="image/svg+xml",
         )
     ],
+    auth=_build_auth(),
 )
 
 

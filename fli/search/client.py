@@ -106,6 +106,17 @@ class Client:
 
             session = _requests.Session()
             session.headers.update(self.DEFAULT_HEADERS)
+            # Some hosts reach Google over IPv6 (Happy Eyeballs prefers it
+            # when a AAAA route exists). Google's Flights RPC polices IPv6
+            # source reputation aggressively and can return an empty payload
+            # (``wrb.fr … [13]``) to an otherwise-fine host, while the same
+            # request over residential IPv4 succeeds. Pin the transport to
+            # IPv4 when ``FLI_FORCE_IPV4`` is set (opt-in; leaves IPv6-only
+            # hosts unaffected).
+            if os.environ.get("FLI_FORCE_IPV4", "").strip().lower() in ("1", "true", "yes", "on"):
+                from curl_cffi.const import CurlOpt
+
+                session.curl.setopt(CurlOpt.IPRESOLVE, 1)  # CURL_IPRESOLVE_V4
             self._sessions.session = session
         return session
 

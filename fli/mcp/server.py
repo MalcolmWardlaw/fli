@@ -279,13 +279,13 @@ class FlightSearchParams(BaseModel):
         description="Maximum layover duration in minutes (multi-stop trips only).",
     )
     top_n: int = Field(
-        5,
+        2,
         description=(
             "Round-trip only: number of outbound options to expand into return-flight "
             "combinations. Cost is `1 + top_n` page fetches (one outbound search plus one "
             "per expanded candidate). The default sort expands only the cheapest `top_n` "
             "outbounds, which are often all the same airline — raise top_n (max 10) to see "
-            "more carriers on a round trip, at the cost of more requests. Ignored for "
+            "more carriers on a round trip, at the cost of more requests. Default 2 keeps round-trip responses small. Ignored for "
             "one-way searches."
         ),
     )
@@ -1231,13 +1231,13 @@ def search_flights(
                 "Round-trip only: number of outbound options to expand into return-flight "
                 "combinations. Cost is `1 + top_n` page fetches. Round-trip results all "
                 "from one airline? Raise top_n to see more carriers (max 10) — the default "
-                "sort otherwise only expands the cheapest 5 outbounds, which are often the "
+                "sort otherwise only expands the cheapest 2 outbounds, which are often the "
                 "same carrier. Ignored for one-way searches."
             ),
             ge=1,
             le=10,
         ),
-    ] = 5,
+    ] = 2,
 ) -> dict[str, Any]:
     """Search for flights between two airports on a specific date.
 
@@ -1580,7 +1580,7 @@ def get_booking_options(
             ge=1,
             le=10,
         ),
-    ] = 5,
+    ] = 2,
 ) -> dict[str, Any]:
     """Get bookable fares (vendor names, prices, and direct booking URLs) for a flight.
 

@@ -68,10 +68,10 @@ def _capturing_stub(calls: list[dict]):
 
 
 class TestTopNDefaultsAndForwarding:
-    def test_default_top_n_is_5(self):
+    def test_default_top_n_is_2(self):
         assert (
             FlightSearchParams(origin="JFK", destination="LHR", departure_date=_future(35)).top_n
-            == 5
+            == 2
         )
 
     def test_round_trip_forwards_top_n_to_search(self, monkeypatch):
@@ -89,7 +89,7 @@ class TestTopNDefaultsAndForwarding:
 
         _execute_flight_search(_round_trip_params())
 
-        assert calls[-1]["top_n"] == 5
+        assert calls[-1]["top_n"] == 2
 
     def test_one_way_top_n_still_forwarded_and_causes_no_error(self, monkeypatch):
         """MCP does not reject an explicit top_n on a one-way search (unlike the CLI)."""
@@ -120,7 +120,7 @@ class TestTopNForwardedToBookingOptionsRerunSearch:
 
         _execute_booking_options(_round_trip_params(), flight_numbers=None)
 
-        assert calls[-1]["top_n"] == 5
+        assert calls[-1]["top_n"] == 2
 
 
 class TestTopNBoundsRejectedByMcpTools:
